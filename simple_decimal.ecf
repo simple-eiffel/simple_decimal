@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-23-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-23-0 http://www.eiffel.com/developers/xml/configuration-1-23-0.xsd" name="simple_decimal" uuid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890" library_target="simple_decimal">
+	<description>simple_decimal - Clean wrapper for precise decimal arithmetic (financial calculations)</description>
+	<target name="simple_decimal">
+		<root all_classes="true"/>
+		<version major="1" minor="0" release="0" build="1" company="Simple Eiffel" product="simple_decimal" copyright="2024-2025 Larry Rix, MIT License"/>
+		<option warning="warning" manifest_array_type="mismatch_warning">
+			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+		</option>
+		<setting name="console_application" value="true"/>
+		<setting name="dead_code_removal" value="feature"/>
+		<capability>
+			<concurrency support="scoop" use="scoop"/>
+			<void_safety support="all" use="all"/>
+		</capability>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="decimal" location="$ISE_LIBRARY\contrib\library\gobo\library\math\library.ecf"/>
+		<cluster name="src" location=".\src\" recursive="true"/>
+	</target>
+	<target name="simple_decimal_tests" extends="simple_decimal">
+		<root class="SIMPLE_DECIMAL_TESTS" feature="make"/>
+		<cluster name="tests" location=".\tests\" recursive="true"/>
+	</target>
+</system>
