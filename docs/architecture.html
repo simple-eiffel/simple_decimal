@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - simple_decimal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_decimal</h1>
+        <p class="tagline">Architecture &amp; Design</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html" class="active">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_decimal">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Design Philosophy</h2>
+            <p>
+                simple_decimal follows the <strong>simple_* library philosophy</strong>: wrap complex
+                underlying implementations with a clean, intuitive API. The library provides a facade
+                over Gobo's MA_DECIMAL while hiding the complexity of context management and
+                providing financial-friendly operations out of the box.
+            </p>
+
+            <div class="highlight-box">
+                <h3>Core Principles</h3>
+                <ul>
+                    <li><strong>Simplicity</strong> - One class, intuitive methods, sensible defaults</li>
+                    <li><strong>Immutability</strong> - All operations return new values</li>
+                    <li><strong>Safety</strong> - Design by Contract throughout</li>
+                    <li><strong>Precision</strong> - No floating-point representation errors</li>
+                    <li><strong>Financial Focus</strong> - Built-in currency and percentage operations</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="class-structure">
+            <h2>Class Structure</h2>
+
+            <h3>SIMPLE_DECIMAL</h3>
+            <p>The library consists of a single public class:</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">SIMPLE_DECIMAL</span>
+
+<span class="keyword">inherit</span>
+    <span class="type">ANY</span>
+        <span class="keyword">redefine</span>
+            default_create, out, is_equal
+        <span class="keyword">end</span>
+
+    <span class="type">COMPARABLE</span>
+        <span class="keyword">undefine</span>
+            default_create, out, is_equal
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Access</span>
+    decimal: <span class="type">MA_DECIMAL</span>
+        <span class="comment">-- Underlying Gobo decimal</span>
+
+    context: <span class="type">MA_DECIMAL_CONTEXT</span>
+        <span class="comment">-- Decimal context for operations</span>
+
+<span class="keyword">invariant</span>
+    decimal_exists: decimal /= Void
+    context_exists: context /= Void
+
+<span class="keyword">end</span></code></pre>
+
+            <h3>Inheritance Rationale</h3>
+            <ul>
+                <li><strong>COMPARABLE</strong> - Enables standard comparison operators (&lt;, &lt;=, &gt;, &gt;=)
+                    and sorting in containers</li>
+                <li><strong>ANY redefinitions</strong>:
+                    <ul>
+                        <li><code>default_create</code> - Creates zero decimal instead of undefined state</li>
+                        <li><code>out</code> - Returns decimal string representation</li>
+                        <li><code>is_equal</code> - Compares by value, not reference</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="underlying-library">
+            <h2>Underlying Implementation: Gobo MA_DECIMAL</h2>
+
+            <p>
+                simple_decimal wraps <strong>Gobo's MA_DECIMAL</strong>, a mature implementation of
+                the General Decimal Arithmetic Specification. This specification was developed by
+                IBM and forms the basis of IEEE 754-2008's decimal floating-point types.
+            </p>
+
+            <h3>Why Gobo MA_DECIMAL?</h3>
+            <ul>
+                <li><strong>Standards Compliant</strong> - Implements the General Decimal Arithmetic Specification</li>
+                <li><strong>Mature</strong> - Part of Gobo, a well-established Eiffel library collection</li>
+                <li><strong>Included with EiffelStudio</strong> - No additional dependencies</li>
+                <li><strong>Arbitrary Precision</strong> - Can handle numbers with many decimal places</li>
+            </ul>
+
+            <h3>What simple_decimal Adds</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>MA_DECIMAL</th>
+                        <th>SIMPLE_DECIMAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Requires explicit context management</td>
+                        <td>Context managed automatically</td>
+                    </tr>
+                    <tr>
+                        <td>Method-based arithmetic</td>
+                        <td>Operator aliases (+, -, *, /)</td>
+                    </tr>
+                    <tr>
+                        <td>No currency formatting</td>
+                        <td>to_currency_string, dollars, cents</td>
+                    </tr>
+                    <tr>
+                        <td>No percentage operations</td>
+                        <td>add_percent, subtract_percent, from_percentage</td>
+                    </tr>
+                    <tr>
+                        <td>No bill splitting</td>
+                        <td>split(n) with penny-perfect distribution</td>
+                    </tr>
+                    <tr>
+                        <td>Complex string parsing</td>
+                        <td>Smart parsing handles $, commas</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="immutability">
+            <h2>Immutability Pattern</h2>
+
+            <p>
+                All arithmetic operations in SIMPLE_DECIMAL return <strong>new instances</strong>.
+                The original values are never modified. This design choice provides several benefits:
+            </p>
+
+            <h3>Benefits</h3>
+            <ul>
+                <li><strong>Thread Safety</strong> - No shared mutable state means no race conditions</li>
+                <li><strong>Predictability</strong> - Values don't change unexpectedly</li>
+                <li><strong>Debugging</strong> - Original values preserved for inspection</li>
+                <li><strong>Functional Style</strong> - Enables chaining and composition</li>
+            </ul>
+
+            <h3>Implementation</h3>
+<pre><code>add <span class="keyword">alias</span> <span class="string">"+"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span>
+        <span class="comment">-- Sum of current and other</span>
+    <span class="keyword">require</span>
+        other_not_void: other /= Void
+    <span class="keyword">do</span>
+        <span class="comment">-- Create NEW decimal with result</span>
+        <span class="keyword">create</span> Result.make_from_decimal (decimal.add (other.decimal, context))
+    <span class="keyword">ensure</span>
+        result_not_void: Result /= Void
+        <span class="comment">-- Original values unchanged (immutability)</span>
+    <span class="keyword">end</span></code></pre>
+
+            <h3>Usage Pattern</h3>
+<pre><code><span class="comment">-- Each operation creates a new value</span>
+a := a + b          <span class="comment">-- 'a' now references new sum; old 'a' unchanged</span>
+
+<span class="comment">-- Chaining is natural</span>
+total := (price * quantity - discount).round_cents</code></pre>
+        </section>
+
+        <section id="context-management">
+            <h2>Context Management</h2>
+
+            <p>
+                The underlying MA_DECIMAL requires a <strong>context object</strong> for every operation.
+                The context controls precision, rounding mode, and error handling. simple_decimal
+                manages this automatically.
+            </p>
+
+            <h3>Default Context</h3>
+            <p>
+                SIMPLE_DECIMAL uses <code>make_double_extended</code> context by default, providing:
+            </p>
+            <ul>
+                <li><strong>Precision</strong> - 34 significant digits (decimal128 equivalent)</li>
+                <li><strong>Rounding</strong> - Half-even (banker's rounding)</li>
+                <li><strong>Range</strong> - Exponents from -6143 to +6144</li>
+            </ul>
+
+            <h3>Rounding Mode Override</h3>
+            <p>
+                For operations requiring different rounding, temporary contexts are created:
+            </p>
+<pre><code>round_up (a_places: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span>
+        <span class="comment">-- Round up (away from zero)</span>
+    <span class="keyword">local</span>
+        l_ctx: <span class="type">MA_DECIMAL_CONTEXT</span>
+    <span class="keyword">do</span>
+        <span class="comment">-- Create temporary context with different rounding</span>
+        <span class="keyword">create</span> l_ctx.make_double_extended
+        l_ctx.set_rounding_mode (l_ctx.round_up)
+        <span class="keyword">create</span> Result.make_from_decimal (decimal.rescale (-a_places, l_ctx))
+    <span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="string-parsing">
+            <h2>String Parsing</h2>
+
+            <p>
+                The <code>make</code> creation procedure accepts various string formats and
+                normalizes them before passing to MA_DECIMAL:
+            </p>
+
+            <h3>Parsing Algorithm</h3>
+<pre><code>clean_string (a_value: <span class="type">READABLE_STRING_GENERAL</span>): <span class="type">STRING</span>
+        <span class="comment">-- Remove currency symbols and commas</span>
+    <span class="keyword">do</span>
+        <span class="keyword">create</span> Result.make (a_value.count)
+        <span class="keyword">across</span> a_value <span class="keyword">as</span> c <span class="keyword">loop</span>
+            <span class="keyword">if</span> c /= '$' <span class="keyword">and</span> c /= ',' <span class="keyword">and</span> c /= ' ' <span class="keyword">then</span>
+                Result.append_character (c)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span></code></pre>
+
+            <h3>Accepted Formats</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Input</th>
+                        <th>After Cleaning</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>"19.99"</td><td>"19.99"</td><td>19.99</td></tr>
+                    <tr><td>"$19.99"</td><td>"19.99"</td><td>19.99</td></tr>
+                    <tr><td>"$1,234.56"</td><td>"1234.56"</td><td>1234.56</td></tr>
+                    <tr><td>"-$99.99"</td><td>"-99.99"</td><td>-99.99</td></tr>
+                    <tr><td>"1,000,000"</td><td>"1000000"</td><td>1000000</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="bill-splitting">
+            <h2>Bill Splitting Algorithm</h2>
+
+            <p>
+                The <code>split</code> feature demonstrates careful handling of remainders:
+            </p>
+
+<pre><code>split (n: <span class="type">INTEGER</span>): <span class="type">ARRAYED_LIST</span> [<span class="type">SIMPLE_DECIMAL</span>]
+        <span class="comment">-- Split into n equal parts, handling remainder</span>
+    <span class="keyword">require</span>
+        n_positive: n > 0
+    <span class="keyword">local</span>
+        l_base, l_total, l_remainder, l_one_cent: <span class="type">SIMPLE_DECIMAL</span>
+    <span class="keyword">do</span>
+        <span class="comment">-- Step 1: Calculate base amount per person</span>
+        l_base := (Current / n).round_cents
+
+        <span class="comment">-- Step 2: Calculate what the total would be</span>
+        l_total := l_base * n
+
+        <span class="comment">-- Step 3: Find the remainder (could be positive or negative)</span>
+        l_remainder := Current - l_total
+
+        <span class="comment">-- Step 4: Distribute pennies to first recipients</span>
+        <span class="comment">-- Result: [$33.34, $33.33, $33.33] for $100/3</span>
+    <span class="keyword">ensure</span>
+        correct_count: Result.count = n
+        sum_equals_original: sum(Result) = Current.round_cents
+    <span class="keyword">end</span></code></pre>
+
+            <h3>Example: $100.00 / 3</h3>
+            <ol>
+                <li>Base amount: $100 / 3 = $33.33 (rounded)</li>
+                <li>Total with base: $33.33 × 3 = $99.99</li>
+                <li>Remainder: $100.00 - $99.99 = $0.01</li>
+                <li>First person gets extra penny: [$33.34, $33.33, $33.33]</li>
+                <li>Sum: $33.34 + $33.33 + $33.33 = $100.00 ✓</li>
+            </ol>
+        </section>
+
+        <section id="contracts">
+            <h2>Design by Contract</h2>
+
+            <p>
+                SIMPLE_DECIMAL uses comprehensive contracts to ensure correctness:
+            </p>
+
+            <h3>Class Invariant</h3>
+<pre><code><span class="keyword">invariant</span>
+    decimal_exists: decimal /= Void
+    context_exists: context /= Void</code></pre>
+
+            <h3>Representative Preconditions</h3>
+<pre><code><span class="comment">-- Division requires non-zero divisor</span>
+divide <span class="keyword">alias</span> <span class="string">"/"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span>
+    <span class="keyword">require</span>
+        other_not_void: other /= Void
+        other_not_zero: <span class="keyword">not</span> other.is_zero
+
+<span class="comment">-- Conversion requires valid number</span>
+to_integer: <span class="type">INTEGER</span>
+    <span class="keyword">require</span>
+        not_nan: <span class="keyword">not</span> is_nan
+        not_infinity: <span class="keyword">not</span> is_infinity
+
+<span class="comment">-- Currency creation requires valid cents</span>
+make_currency (a_dollars, a_cents: <span class="type">INTEGER</span>)
+    <span class="keyword">require</span>
+        cents_valid: a_cents >= 0 <span class="keyword">and</span> a_cents <= 99</code></pre>
+
+            <h3>Representative Postconditions</h3>
+<pre><code><span class="comment">-- Arithmetic always produces result</span>
+add <span class="keyword">alias</span> <span class="string">"+"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span>
+    <span class="keyword">ensure</span>
+        result_not_void: Result /= Void
+
+<span class="comment">-- Negation flips sign (except zero)</span>
+negate: <span class="type">SIMPLE_DECIMAL</span>
+    <span class="keyword">ensure</span>
+        sign_flipped: Result.is_negative /= is_negative <span class="keyword">or</span> is_zero
+
+<span class="comment">-- Absolute value is never negative</span>
+absolute: <span class="type">SIMPLE_DECIMAL</span>
+    <span class="keyword">ensure</span>
+        result_not_negative: <span class="keyword">not</span> Result.is_negative
+
+<span class="comment">-- Split produces correct count and sum</span>
+split (n: <span class="type">INTEGER</span>): <span class="type">ARRAYED_LIST</span> [<span class="type">SIMPLE_DECIMAL</span>]
+    <span class="keyword">ensure</span>
+        correct_count: Result.count = n
+        sum_equals_original: sum_list(Result).round_cents.is_equal(round_cents)</code></pre>
+        </section>
+
+        <section id="scoop">
+            <h2>SCOOP Compatibility</h2>
+
+            <p>
+                simple_decimal is designed for SCOOP (Simple Concurrent Object-Oriented Programming):
+            </p>
+
+            <ul>
+                <li><strong>Immutable Operations</strong> - No shared mutable state to protect</li>
+                <li><strong>Void Safety</strong> - All attributes are attached by invariant</li>
+                <li><strong>No Global State</strong> - Each instance is self-contained</li>
+            </ul>
+
+            <h3>ECF Configuration</h3>
+<pre><code>&lt;capability&gt;
+    &lt;concurrency support="scoop" use="scoop"/&gt;
+    &lt;void_safety support="all" use="all"/&gt;
+&lt;/capability&gt;</code></pre>
+        </section>
+
+        <section id="dependencies">
+            <h2>Dependencies</h2>
+
+            <h3>Required Libraries</h3>
+            <ul>
+                <li><strong>base</strong> - EiffelStudio standard library</li>
+                <li><strong>Gobo Math</strong> - Provides MA_DECIMAL (<code>$ISE_LIBRARY/contrib/library/gobo/library/math/library.ecf</code>)</li>
+            </ul>
+
+            <h3>No External Dependencies</h3>
+            <p>
+                simple_decimal has no dependencies outside of what ships with EiffelStudio.
+                No additional installation or configuration required.
+            </p>
+        </section>
+
+        <section id="file-structure">
+            <h2>File Structure</h2>
+
+<pre><code>simple_decimal/
+├── simple_decimal.ecf      <span class="comment">-- Project configuration</span>
+├── src/
+│   └── simple_decimal.e    <span class="comment">-- Main class (~700 lines)</span>
+├── tests/
+│   └── simple_decimal_tests.e  <span class="comment">-- Test suite (~950 lines)</span>
+├── docs/
+│   ├── index.html          <span class="comment">-- Documentation home</span>
+│   ├── user-guide.html     <span class="comment">-- Tutorial</span>
+│   ├── api-reference.html  <span class="comment">-- API docs</span>
+│   ├── architecture.html   <span class="comment">-- This document</span>
+│   ├── cookbook.html       <span class="comment">-- Recipes</span>
+│   ├── css/style.css       <span class="comment">-- Styling</span>
+│   └── images/logo.png     <span class="comment">-- Logo</span>
+├── README.md               <span class="comment">-- Quick start</span>
+└── LICENSE                 <span class="comment">-- MIT License</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - simple_decimal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_decimal</h1>
+        <p class="tagline">API Reference</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html" class="active">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_decimal">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="toc">
+            <h2>Contents</h2>
+            <ul>
+                <li><a href="#creation">Creation Procedures</a></li>
+                <li><a href="#access">Access (Attributes)</a></li>
+                <li><a href="#status">Status Queries</a></li>
+                <li><a href="#conversion">Conversion</a></li>
+                <li><a href="#comparison">Comparison</a></li>
+                <li><a href="#arithmetic">Arithmetic Operations</a></li>
+                <li><a href="#rounding">Rounding</a></li>
+                <li><a href="#financial">Financial Operations</a></li>
+                <li><a href="#factory">Factory Helpers</a></li>
+            </ul>
+        </section>
+
+        <section id="creation">
+            <h2>Creation Procedures</h2>
+
+            <div class="api-entry">
+                <h3>default_create</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.default_create</code></p>
+                <p>Creates a zero decimal value.</p>
+                <p><strong>Postcondition:</strong> <code>is_zero</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>make</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make (a_value: <span class="type">READABLE_STRING_GENERAL</span>)</code></p>
+                <p>Creates from string representation. Accepts various formats including currency symbols and thousand separators.</p>
+                <p><strong>Accepted formats:</strong> "19.99", "$19.99", "$1,234.56", "-$99.99", "1,000,000"</p>
+                <p><strong>Precondition:</strong> <code>a_value /= Void and then not a_value.is_empty</code></p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> price.make (<span class="string">"$1,234.56"</span>)   <span class="comment">-- Creates 1234.56</span></code></pre>
+            </div>
+
+            <div class="api-entry">
+                <h3>make_from_integer</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make_from_integer (a_value: <span class="type">INTEGER</span>)</code></p>
+                <p>Creates from an integer value.</p>
+                <p><strong>Postcondition:</strong> <code>to_integer = a_value</code></p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> count.make_from_integer (42)</code></pre>
+            </div>
+
+            <div class="api-entry">
+                <h3>make_from_double</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make_from_double (a_value: <span class="type">DOUBLE</span>)</code></p>
+                <p>Creates from a double value. <strong>Note:</strong> Prefer <code>make</code> with string for exact precision.</p>
+                <div class="highlight-box warning">
+                    <p>The double 0.1 is already imprecise before conversion. Use string creation for financial applications.</p>
+                </div>
+            </div>
+
+            <div class="api-entry">
+                <h3>make_from_decimal</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make_from_decimal (a_decimal: <span class="type">MA_DECIMAL</span>)</code></p>
+                <p>Creates from an existing Gobo MA_DECIMAL. Useful for advanced interoperability.</p>
+                <p><strong>Precondition:</strong> <code>a_decimal /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>make_currency</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make_currency (a_dollars: <span class="type">INTEGER</span>; a_cents: <span class="type">INTEGER</span>)</code></p>
+                <p>Creates from separate dollar and cent amounts.</p>
+                <p><strong>Precondition:</strong> <code>a_cents >= 0 and a_cents <= 99</code></p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> price.make_currency (19, 99)   <span class="comment">-- Creates 19.99</span>
+<span class="keyword">create</span> price.make_currency (-5, 25)   <span class="comment">-- Creates -5.25</span></code></pre>
+            </div>
+
+            <div class="api-entry">
+                <h3>make_zero</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make_zero</code></p>
+                <p>Creates a zero value.</p>
+                <p><strong>Postcondition:</strong> <code>is_zero</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>make_one</h3>
+                <p class="signature"><code><span class="keyword">create</span> d.make_one</code></p>
+                <p>Creates the value 1.</p>
+                <p><strong>Postcondition:</strong> <code>to_integer = 1</code></p>
+            </div>
+        </section>
+
+        <section id="access">
+            <h2>Access (Attributes)</h2>
+
+            <div class="api-entry">
+                <h3>decimal</h3>
+                <p class="signature"><code>decimal: <span class="type">MA_DECIMAL</span></code></p>
+                <p>The underlying Gobo decimal value. Exposed for advanced users who need direct access to MA_DECIMAL features.</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>context</h3>
+                <p class="signature"><code>context: <span class="type">MA_DECIMAL_CONTEXT</span></code></p>
+                <p>The decimal context used for operations. Controls precision and rounding behavior.</p>
+            </div>
+        </section>
+
+        <section id="status">
+            <h2>Status Queries</h2>
+
+            <div class="api-entry">
+                <h3>is_zero</h3>
+                <p class="signature"><code>is_zero: <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if the value equals zero.</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>is_negative</h3>
+                <p class="signature"><code>is_negative: <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if the value is less than zero.</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>is_positive</h3>
+                <p class="signature"><code>is_positive: <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if the value is greater than zero (not zero, not negative).</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>is_integer</h3>
+                <p class="signature"><code>is_integer: <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if the value has no fractional part (e.g., 42.00 returns True, 42.5 returns False).</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>is_nan</h3>
+                <p class="signature"><code>is_nan: <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if the value is Not-a-Number (result of invalid operation).</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>is_infinity</h3>
+                <p class="signature"><code>is_infinity: <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if the value is positive or negative infinity.</p>
+            </div>
+        </section>
+
+        <section id="conversion">
+            <h2>Conversion</h2>
+
+            <div class="api-entry">
+                <h3>to_integer</h3>
+                <p class="signature"><code>to_integer: <span class="type">INTEGER</span></code></p>
+                <p>Converts to integer, truncating any fractional part.</p>
+                <p><strong>Preconditions:</strong> <code>not is_nan</code>, <code>not is_infinity</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>to_double</h3>
+                <p class="signature"><code>to_double: <span class="type">DOUBLE</span></code></p>
+                <p>Converts to double. May lose precision for values that cannot be exactly represented.</p>
+                <p><strong>Preconditions:</strong> <code>not is_nan</code>, <code>not is_infinity</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>out</h3>
+                <p class="signature"><code>out: <span class="type">STRING</span></code></p>
+                <p>Standard string representation (may use scientific notation for very large/small values).</p>
+                <p><strong>Example:</strong> "19.99", "1.5E+10"</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>to_string</h3>
+                <p class="signature"><code>to_string: <span class="type">STRING</span></code></p>
+                <p>Engineering string representation (avoids scientific notation when possible).</p>
+                <p><strong>Example:</strong> "19.99", "1234567890"</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>to_currency_string</h3>
+                <p class="signature"><code>to_currency_string: <span class="type">STRING</span></code></p>
+                <p>Formats as currency with dollar sign, comma separators, and exactly 2 decimal places.</p>
+                <p><strong>Examples:</strong> "$1,234.56", "-$99.99", "$0.50"</p>
+                <p><strong>Postcondition:</strong> Result starts with "$" or "-$"</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>dollars</h3>
+                <p class="signature"><code>dollars: <span class="type">INTEGER</span></code></p>
+                <p>Returns the integer dollar portion (absolute value).</p>
+                <p><strong>Example:</strong> For -19.95, returns 19</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>cents</h3>
+                <p class="signature"><code>cents: <span class="type">INTEGER</span></code></p>
+                <p>Returns the cents portion (0-99).</p>
+                <p><strong>Postcondition:</strong> <code>Result >= 0 and Result <= 99</code></p>
+                <p><strong>Example:</strong> For 19.95, returns 95</p>
+            </div>
+        </section>
+
+        <section id="comparison">
+            <h2>Comparison</h2>
+
+            <div class="api-entry">
+                <h3>is_less alias "&lt;"</h3>
+                <p class="signature"><code>is_less <span class="keyword">alias</span> <span class="string">"&lt;"</span> (other: <span class="keyword">like</span> Current): <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if current value is less than other.</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>is_equal</h3>
+                <p class="signature"><code>is_equal (other: <span class="keyword">like</span> Current): <span class="type">BOOLEAN</span></code></p>
+                <p>Returns True if values are mathematically equal.</p>
+            </div>
+
+            <p><strong>Inherited from COMPARABLE:</strong></p>
+            <ul>
+                <li><code>&lt;=</code> - Less than or equal</li>
+                <li><code>&gt;</code> - Greater than</li>
+                <li><code>&gt;=</code> - Greater than or equal</li>
+                <li><code>min(other)</code> - Minimum of two values</li>
+                <li><code>max(other)</code> - Maximum of two values</li>
+            </ul>
+        </section>
+
+        <section id="arithmetic">
+            <h2>Arithmetic Operations</h2>
+            <p class="note">All arithmetic operations are <strong>immutable</strong> - they return new SIMPLE_DECIMAL objects without modifying the originals.</p>
+
+            <div class="api-entry">
+                <h3>add alias "+"</h3>
+                <p class="signature"><code>add <span class="keyword">alias</span> <span class="string">"+"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the sum of current and other.</p>
+                <p><strong>Precondition:</strong> <code>other /= Void</code></p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>subtract alias "-"</h3>
+                <p class="signature"><code>subtract <span class="keyword">alias</span> <span class="string">"-"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the difference (current minus other).</p>
+                <p><strong>Precondition:</strong> <code>other /= Void</code></p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>multiply alias "*"</h3>
+                <p class="signature"><code>multiply <span class="keyword">alias</span> <span class="string">"*"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the product of current and other.</p>
+                <p><strong>Precondition:</strong> <code>other /= Void</code></p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>divide alias "/"</h3>
+                <p class="signature"><code>divide <span class="keyword">alias</span> <span class="string">"/"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the quotient (current divided by other).</p>
+                <p><strong>Preconditions:</strong> <code>other /= Void</code>, <code>not other.is_zero</code></p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>integer_divide alias "//"</h3>
+                <p class="signature"><code>integer_divide <span class="keyword">alias</span> <span class="string">"//"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the integer quotient (floor division).</p>
+                <p><strong>Preconditions:</strong> <code>other /= Void</code>, <code>not other.is_zero</code></p>
+                <p><strong>Postconditions:</strong> <code>Result /= Void</code>, <code>Result.is_integer</code></p>
+                <p><strong>Example:</strong> 100 // 30 = 3</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>modulo alias "\\"</h3>
+                <p class="signature"><code>modulo <span class="keyword">alias</span> <span class="string">"\\"</span> (other: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the remainder after integer division.</p>
+                <p><strong>Preconditions:</strong> <code>other /= Void</code>, <code>not other.is_zero</code></p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+                <p><strong>Example:</strong> 100 \\ 30 = 10</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>negate</h3>
+                <p class="signature"><code>negate: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the negated value (sign flipped).</p>
+                <p><strong>Postconditions:</strong> <code>Result /= Void</code>, <code>Result.is_negative /= is_negative or is_zero</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>absolute</h3>
+                <p class="signature"><code>absolute: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns the absolute value.</p>
+                <p><strong>Postconditions:</strong> <code>Result /= Void</code>, <code>not Result.is_negative</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>power</h3>
+                <p class="signature"><code>power (n: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns current raised to the integer power n.</p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+                <p><strong>Example:</strong> 10.power(3) = 1000</p>
+            </div>
+        </section>
+
+        <section id="rounding">
+            <h2>Rounding</h2>
+
+            <div class="api-entry">
+                <h3>round_cents</h3>
+                <p class="signature"><code>round_cents: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Rounds to 2 decimal places using banker's rounding. Shortcut for <code>round(2)</code>.</p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>round</h3>
+                <p class="signature"><code>round (a_places: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Rounds to specified decimal places using banker's rounding (half-even).</p>
+                <p><strong>Precondition:</strong> <code>a_places >= 0</code></p>
+                <p><strong>Postcondition:</strong> <code>Result /= Void</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>round_up</h3>
+                <p class="signature"><code>round_up (a_places: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Rounds away from zero to specified decimal places.</p>
+                <p><strong>Precondition:</strong> <code>a_places >= 0</code></p>
+                <p><strong>Examples:</strong> 2.34 -> 2.4, -2.34 -> -2.4</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>round_down</h3>
+                <p class="signature"><code>round_down (a_places: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Rounds toward zero to specified decimal places (truncation).</p>
+                <p><strong>Precondition:</strong> <code>a_places >= 0</code></p>
+                <p><strong>Examples:</strong> 2.36 -> 2.3, -2.36 -> -2.3</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>round_ceiling</h3>
+                <p class="signature"><code>round_ceiling (a_places: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Rounds toward positive infinity to specified decimal places.</p>
+                <p><strong>Precondition:</strong> <code>a_places >= 0</code></p>
+                <p><strong>Examples:</strong> 2.34 -> 2.4, -2.36 -> -2.3</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>round_floor</h3>
+                <p class="signature"><code>round_floor (a_places: <span class="type">INTEGER</span>): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Rounds toward negative infinity to specified decimal places.</p>
+                <p><strong>Precondition:</strong> <code>a_places >= 0</code></p>
+                <p><strong>Examples:</strong> 2.36 -> 2.3, -2.34 -> -2.4</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>truncate</h3>
+                <p class="signature"><code>truncate: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Removes the fractional part entirely. Equivalent to <code>round_down(0)</code>.</p>
+                <p><strong>Postconditions:</strong> <code>Result /= Void</code>, <code>Result.is_integer</code></p>
+            </div>
+        </section>
+
+        <section id="financial">
+            <h2>Financial Operations</h2>
+
+            <div class="api-entry">
+                <h3>percent_of</h3>
+                <p class="signature"><code>percent_of (a_base: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Calculates what percentage current is of the base value.</p>
+                <p><strong>Preconditions:</strong> <code>a_base /= Void</code>, <code>not a_base.is_zero</code></p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> tip.make (<span class="string">"15.00"</span>)
+<span class="keyword">create</span> bill.make (<span class="string">"75.00"</span>)
+tip.percent_of (bill)  <span class="comment">-- Returns 20.0 (tip is 20% of bill)</span></code></pre>
+            </div>
+
+            <div class="api-entry">
+                <h3>as_percentage</h3>
+                <p class="signature"><code>as_percentage: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Multiplies by 100 (converts decimal rate to percentage display).</p>
+                <p><strong>Example:</strong> 0.0825.as_percentage = 8.25</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>from_percentage</h3>
+                <p class="signature"><code>from_percentage: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Divides by 100 (converts percentage to decimal rate for multiplication).</p>
+                <p><strong>Example:</strong> 8.25.from_percentage = 0.0825</p>
+            </div>
+
+            <div class="api-entry">
+                <h3>add_percent</h3>
+                <p class="signature"><code>add_percent (a_percent: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Adds a percentage to current value. The percentage is given as a number (e.g., 8.25 for 8.25%).</p>
+                <p><strong>Precondition:</strong> <code>a_percent /= Void</code></p>
+                <p><strong>Formula:</strong> current + (current * a_percent / 100)</p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> price.make (<span class="string">"100.00"</span>)
+<span class="keyword">create</span> tax_rate.make (<span class="string">"8.25"</span>)
+price.add_percent (tax_rate)  <span class="comment">-- Returns 108.25</span></code></pre>
+            </div>
+
+            <div class="api-entry">
+                <h3>subtract_percent</h3>
+                <p class="signature"><code>subtract_percent (a_percent: <span class="keyword">like</span> Current): <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Subtracts a percentage from current value (discount).</p>
+                <p><strong>Precondition:</strong> <code>a_percent /= Void</code></p>
+                <p><strong>Formula:</strong> current - (current * a_percent / 100)</p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> price.make (<span class="string">"100.00"</span>)
+<span class="keyword">create</span> discount.make (<span class="string">"15.0"</span>)
+price.subtract_percent (discount)  <span class="comment">-- Returns 85.00</span></code></pre>
+            </div>
+
+            <div class="api-entry">
+                <h3>split</h3>
+                <p class="signature"><code>split (n: <span class="type">INTEGER</span>): <span class="type">ARRAYED_LIST</span> [<span class="type">SIMPLE_DECIMAL</span>]</code></p>
+                <p>Splits the amount into n equal parts, distributing any remainder cents to the first parts.</p>
+                <p><strong>Precondition:</strong> <code>n > 0</code></p>
+                <p><strong>Postconditions:</strong> <code>Result.count = n</code>, sum of Result equals original (rounded to cents)</p>
+                <p><strong>Example:</strong></p>
+<pre><code><span class="keyword">create</span> bill.make (<span class="string">"100.00"</span>)
+parts := bill.split (3)
+<span class="comment">-- Result: [$33.34, $33.33, $33.33]</span>
+<span class="comment">-- Sum: $100.00 exactly</span></code></pre>
+            </div>
+        </section>
+
+        <section id="factory">
+            <h2>Factory Helpers</h2>
+
+            <div class="api-entry">
+                <h3>zero</h3>
+                <p class="signature"><code>zero: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns a new zero value.</p>
+                <p><strong>Postcondition:</strong> <code>Result.is_zero</code></p>
+            </div>
+
+            <div class="api-entry">
+                <h3>one</h3>
+                <p class="signature"><code>one: <span class="type">SIMPLE_DECIMAL</span></code></p>
+                <p>Returns a new value of 1.</p>
+                <p><strong>Postcondition:</strong> <code>Result.to_integer = 1</code></p>
+            </div>
+        </section>
+
+        <section id="invariants">
+            <h2>Class Invariant</h2>
+<pre><code><span class="keyword">invariant</span>
+    decimal_exists: decimal /= Void
+    context_exists: context /= Void</code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

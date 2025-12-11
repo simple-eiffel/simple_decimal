@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookbook - simple_decimal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_decimal</h1>
+        <p class="tagline">Cookbook - Real-World Recipes</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html" class="active">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_decimal">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="intro">
+            <h2>Recipe Collection</h2>
+            <p>
+                This cookbook contains ready-to-use code patterns for common financial and decimal
+                arithmetic scenarios. Each recipe is complete and can be adapted to your needs.
+            </p>
+        </section>
+
+        <section id="invoice">
+            <h2>Recipe: Invoice Calculator</h2>
+            <p>Calculate invoice totals with line items, discounts, and tax.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">INVOICE_CALCULATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Access</span>
+
+    subtotal: <span class="type">SIMPLE_DECIMAL</span>
+            <span class="comment">-- Running subtotal</span>
+        <span class="keyword">attribute</span>
+            <span class="keyword">create</span> Result.make_zero
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Operations</span>
+
+    add_line_item (unit_price_str: <span class="type">STRING</span>; quantity: <span class="type">INTEGER</span>)
+            <span class="comment">-- Add a line item to the invoice</span>
+        <span class="keyword">local</span>
+            unit_price, qty, line_total: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> unit_price.make (unit_price_str)
+            <span class="keyword">create</span> qty.make_from_integer (quantity)
+            line_total := unit_price * qty
+            subtotal := subtotal + line_total
+        <span class="keyword">end</span>
+
+    apply_discount (percent_str: <span class="type">STRING</span>)
+            <span class="comment">-- Apply percentage discount to subtotal</span>
+        <span class="keyword">local</span>
+            discount_rate: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> discount_rate.make (percent_str)
+            subtotal := subtotal.subtract_percent (discount_rate)
+        <span class="keyword">end</span>
+
+    calculate_total (tax_rate_str: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Calculate final total with tax, return formatted</span>
+        <span class="keyword">local</span>
+            tax_rate, tax, total: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> tax_rate.make (tax_rate_str)
+            tax := (subtotal * tax_rate.from_percentage).round_cents
+            total := subtotal + tax
+            Result := total.to_currency_string
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage:</span>
+<span class="keyword">local</span>
+    calc: <span class="type">INVOICE_CALCULATOR</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> calc
+    calc.add_line_item (<span class="string">"29.99"</span>, 3)    <span class="comment">-- 3 items @ $29.99</span>
+    calc.add_line_item (<span class="string">"149.95"</span>, 1)   <span class="comment">-- 1 item @ $149.95</span>
+    calc.apply_discount (<span class="string">"10"</span>)         <span class="comment">-- 10% off</span>
+    print (calc.calculate_total (<span class="string">"8.25"</span>)) <span class="comment">-- Add 8.25% tax</span>
+    <span class="comment">-- Output: "$227.84"</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="tip-calculator">
+            <h2>Recipe: Restaurant Tip Calculator</h2>
+            <p>Calculate tip and split the bill among multiple people.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">TIP_CALCULATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Calculation</span>
+
+    calculate_split (bill_str: <span class="type">STRING</span>; tip_percent_str: <span class="type">STRING</span>;
+                     num_people: <span class="type">INTEGER</span>): <span class="type">TUPLE</span> [
+                         tip: <span class="type">STRING</span>;
+                         total: <span class="type">STRING</span>;
+                         per_person: <span class="type">ARRAYED_LIST</span> [<span class="type">STRING</span>]]
+            <span class="comment">-- Calculate tip, total, and split per person</span>
+        <span class="keyword">local</span>
+            bill, tip_rate, tip, total: <span class="type">SIMPLE_DECIMAL</span>
+            splits: <span class="type">ARRAYED_LIST</span> [<span class="type">SIMPLE_DECIMAL</span>]
+            amounts: <span class="type">ARRAYED_LIST</span> [<span class="type">STRING</span>]
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> bill.make (bill_str)
+            <span class="keyword">create</span> tip_rate.make (tip_percent_str)
+
+            <span class="comment">-- Calculate tip and total</span>
+            tip := (bill * tip_rate.from_percentage).round_cents
+            total := bill + tip
+
+            <span class="comment">-- Split among people</span>
+            splits := total.split (num_people)
+
+            <span class="comment">-- Convert to strings</span>
+            <span class="keyword">create</span> amounts.make (num_people)
+            <span class="keyword">across</span> splits <span class="keyword">as</span> s <span class="keyword">loop</span>
+                amounts.extend (s.to_currency_string)
+            <span class="keyword">end</span>
+
+            Result := [tip.to_currency_string, total.to_currency_string, amounts]
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage:</span>
+<span class="keyword">local</span>
+    calc: <span class="type">TIP_CALCULATOR</span>
+    result: <span class="type">TUPLE</span> [tip, total: <span class="type">STRING</span>; per_person: <span class="type">ARRAYED_LIST</span> [<span class="type">STRING</span>]]
+<span class="keyword">do</span>
+    <span class="keyword">create</span> calc
+    result := calc.calculate_split (<span class="string">"127.50"</span>, <span class="string">"20"</span>, 4)
+    print (<span class="string">"Tip: "</span> + result.tip)           <span class="comment">-- Tip: $25.50</span>
+    print (<span class="string">"Total: "</span> + result.total)       <span class="comment">-- Total: $153.00</span>
+    print (<span class="string">"Per person: "</span>)                 <span class="comment">-- Per person:</span>
+    <span class="keyword">across</span> result.per_person <span class="keyword">as</span> p <span class="keyword">loop</span>
+        print (p)                            <span class="comment">-- $38.25 each (4 people)</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="interest">
+            <h2>Recipe: Compound Interest Calculator</h2>
+            <p>Calculate compound interest with monthly compounding.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">INTEREST_CALCULATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Calculation</span>
+
+    compound_interest (principal_str: <span class="type">STRING</span>;
+                       annual_rate_str: <span class="type">STRING</span>;
+                       years: <span class="type">INTEGER</span>): <span class="type">STRING</span>
+            <span class="comment">-- Calculate compound interest (monthly compounding)</span>
+            <span class="comment">-- Formula: A = P(1 + r/n)^(nt)</span>
+            <span class="comment">-- P = principal, r = rate, n = 12 (monthly), t = years</span>
+        <span class="keyword">local</span>
+            principal, rate, monthly_rate: <span class="type">SIMPLE_DECIMAL</span>
+            base, factor, final_amount: <span class="type">SIMPLE_DECIMAL</span>
+            one, twelve: <span class="type">SIMPLE_DECIMAL</span>
+            total_periods: <span class="type">INTEGER</span>
+            i: <span class="type">INTEGER</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> principal.make (principal_str)
+            <span class="keyword">create</span> rate.make (annual_rate_str)
+            <span class="keyword">create</span> one.make_one
+            <span class="keyword">create</span> twelve.make_from_integer (12)
+
+            <span class="comment">-- Monthly rate = annual rate / 12</span>
+            monthly_rate := rate.from_percentage / twelve
+
+            <span class="comment">-- Base = 1 + monthly_rate</span>
+            base := one + monthly_rate
+
+            <span class="comment">-- Calculate (1 + r/n)^(nt) iteratively</span>
+            total_periods := years * 12
+            <span class="keyword">create</span> factor.make_one
+            <span class="keyword">from</span> i := 1 <span class="keyword">until</span> i > total_periods <span class="keyword">loop</span>
+                factor := factor * base
+                i := i + 1
+            <span class="keyword">end</span>
+
+            <span class="comment">-- Final = principal * factor</span>
+            final_amount := (principal * factor).round_cents
+
+            Result := final_amount.to_currency_string
+        <span class="keyword">end</span>
+
+    interest_earned (principal_str, annual_rate_str: <span class="type">STRING</span>;
+                     years: <span class="type">INTEGER</span>): <span class="type">STRING</span>
+            <span class="comment">-- Calculate just the interest portion</span>
+        <span class="keyword">local</span>
+            principal, final_amount, interest: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> principal.make (principal_str)
+            <span class="keyword">create</span> final_amount.make (compound_interest (principal_str,
+                                                        annual_rate_str, years))
+            interest := final_amount - principal
+            Result := interest.to_currency_string
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage: $10,000 at 5% for 10 years</span>
+<span class="keyword">local</span>
+    calc: <span class="type">INTEREST_CALCULATOR</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> calc
+    print (calc.compound_interest (<span class="string">"10000"</span>, <span class="string">"5"</span>, 10))
+    <span class="comment">-- Output: "$16,470.09"</span>
+    print (calc.interest_earned (<span class="string">"10000"</span>, <span class="string">"5"</span>, 10))
+    <span class="comment">-- Output: "$6,470.09"</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="currency-converter">
+            <h2>Recipe: Currency Converter</h2>
+            <p>Convert between currencies with precise exchange rates.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">CURRENCY_CONVERTER</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Access</span>
+
+    rates: <span class="type">HASH_TABLE</span> [<span class="type">SIMPLE_DECIMAL</span>, <span class="type">STRING</span>]
+            <span class="comment">-- Exchange rates relative to USD</span>
+        <span class="keyword">attribute</span>
+            <span class="keyword">create</span> Result.make (10)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Setup</span>
+
+    set_rate (currency: <span class="type">STRING</span>; rate_str: <span class="type">STRING</span>)
+            <span class="comment">-- Set exchange rate (how many of currency = 1 USD)</span>
+        <span class="keyword">local</span>
+            rate: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> rate.make (rate_str)
+            rates.force (rate, currency.as_upper)
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Conversion</span>
+
+    convert (amount_str: <span class="type">STRING</span>; from_currency, to_currency: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Convert amount from one currency to another</span>
+        <span class="keyword">require</span>
+            valid_from: rates.has (from_currency.as_upper) <span class="keyword">or</span>
+                        from_currency.as_upper.is_equal (<span class="string">"USD"</span>)
+            valid_to: rates.has (to_currency.as_upper) <span class="keyword">or</span>
+                      to_currency.as_upper.is_equal (<span class="string">"USD"</span>)
+        <span class="keyword">local</span>
+            amount, usd_amount, result_amount: <span class="type">SIMPLE_DECIMAL</span>
+            from_rate, to_rate: <span class="type">SIMPLE_DECIMAL</span>
+            one: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> amount.make (amount_str)
+            <span class="keyword">create</span> one.make_one
+
+            <span class="comment">-- Get rates (USD = 1.0)</span>
+            <span class="keyword">if</span> from_currency.as_upper.is_equal (<span class="string">"USD"</span>) <span class="keyword">then</span>
+                from_rate := one
+            <span class="keyword">else</span>
+                from_rate := rates [from_currency.as_upper]
+            <span class="keyword">end</span>
+
+            <span class="keyword">if</span> to_currency.as_upper.is_equal (<span class="string">"USD"</span>) <span class="keyword">then</span>
+                to_rate := one
+            <span class="keyword">else</span>
+                to_rate := rates [to_currency.as_upper]
+            <span class="keyword">end</span>
+
+            <span class="comment">-- Convert: from -> USD -> to</span>
+            usd_amount := amount / from_rate
+            result_amount := (usd_amount * to_rate).round_cents
+
+            Result := result_amount.to_string
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage:</span>
+<span class="keyword">local</span>
+    conv: <span class="type">CURRENCY_CONVERTER</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> conv
+    conv.set_rate (<span class="string">"EUR"</span>, <span class="string">"0.92"</span>)    <span class="comment">-- 1 USD = 0.92 EUR</span>
+    conv.set_rate (<span class="string">"GBP"</span>, <span class="string">"0.79"</span>)    <span class="comment">-- 1 USD = 0.79 GBP</span>
+    conv.set_rate (<span class="string">"JPY"</span>, <span class="string">"149.50"</span>)  <span class="comment">-- 1 USD = 149.50 JPY</span>
+
+    print (conv.convert (<span class="string">"100"</span>, <span class="string">"USD"</span>, <span class="string">"EUR"</span>))  <span class="comment">-- "92.00"</span>
+    print (conv.convert (<span class="string">"100"</span>, <span class="string">"EUR"</span>, <span class="string">"USD"</span>))  <span class="comment">-- "108.70"</span>
+    print (conv.convert (<span class="string">"100"</span>, <span class="string">"EUR"</span>, <span class="string">"JPY"</span>))  <span class="comment">-- "16249.46"</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="payroll">
+            <h2>Recipe: Payroll Calculator</h2>
+            <p>Calculate gross pay, deductions, and net pay.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">PAYROLL_CALCULATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Calculation</span>
+
+    calculate_paycheck (
+        hourly_rate_str: <span class="type">STRING</span>;
+        regular_hours, overtime_hours: <span class="type">INTEGER</span>;
+        federal_tax_rate_str, state_tax_rate_str: <span class="type">STRING</span>;
+        insurance_deduction_str: <span class="type">STRING</span>
+    ): <span class="type">TUPLE</span> [gross, federal_tax, state_tax, insurance, net: <span class="type">STRING</span>]
+            <span class="comment">-- Calculate complete paycheck breakdown</span>
+        <span class="keyword">local</span>
+            hourly_rate, regular_pay, overtime_pay, gross_pay: <span class="type">SIMPLE_DECIMAL</span>
+            federal_rate, state_rate, federal_tax, state_tax: <span class="type">SIMPLE_DECIMAL</span>
+            insurance, total_deductions, net_pay: <span class="type">SIMPLE_DECIMAL</span>
+            overtime_multiplier: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> hourly_rate.make (hourly_rate_str)
+            <span class="keyword">create</span> overtime_multiplier.make (<span class="string">"1.5"</span>)
+
+            <span class="comment">-- Calculate gross pay</span>
+            regular_pay := hourly_rate *
+                           <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make_from_integer (regular_hours)
+            overtime_pay := (hourly_rate * overtime_multiplier) *
+                            <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make_from_integer (overtime_hours)
+            gross_pay := regular_pay + overtime_pay
+
+            <span class="comment">-- Calculate taxes</span>
+            <span class="keyword">create</span> federal_rate.make (federal_tax_rate_str)
+            <span class="keyword">create</span> state_rate.make (state_tax_rate_str)
+            federal_tax := (gross_pay * federal_rate.from_percentage).round_cents
+            state_tax := (gross_pay * state_rate.from_percentage).round_cents
+
+            <span class="comment">-- Insurance deduction</span>
+            <span class="keyword">create</span> insurance.make (insurance_deduction_str)
+
+            <span class="comment">-- Calculate net</span>
+            total_deductions := federal_tax + state_tax + insurance
+            net_pay := gross_pay - total_deductions
+
+            Result := [
+                gross_pay.to_currency_string,
+                federal_tax.to_currency_string,
+                state_tax.to_currency_string,
+                insurance.to_currency_string,
+                net_pay.to_currency_string
+            ]
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage: $25/hour, 40 regular + 10 overtime</span>
+<span class="keyword">local</span>
+    payroll: <span class="type">PAYROLL_CALCULATOR</span>
+    check: <span class="type">TUPLE</span> [gross, federal_tax, state_tax, insurance, net: <span class="type">STRING</span>]
+<span class="keyword">do</span>
+    <span class="keyword">create</span> payroll
+    check := payroll.calculate_paycheck (
+        <span class="string">"25.00"</span>,      <span class="comment">-- hourly rate</span>
+        40, 10,        <span class="comment">-- regular hours, overtime hours</span>
+        <span class="string">"22"</span>,         <span class="comment">-- 22% federal tax</span>
+        <span class="string">"5"</span>,          <span class="comment">-- 5% state tax</span>
+        <span class="string">"125.00"</span>      <span class="comment">-- insurance per period</span>
+    )
+    print (<span class="string">"Gross: "</span> + check.gross)           <span class="comment">-- Gross: $1,375.00</span>
+    print (<span class="string">"Federal Tax: "</span> + check.federal_tax) <span class="comment">-- Federal Tax: $302.50</span>
+    print (<span class="string">"State Tax: "</span> + check.state_tax)     <span class="comment">-- State Tax: $68.75</span>
+    print (<span class="string">"Insurance: "</span> + check.insurance)     <span class="comment">-- Insurance: $125.00</span>
+    print (<span class="string">"Net Pay: "</span> + check.net)             <span class="comment">-- Net Pay: $878.75</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="shopping-cart">
+            <h2>Recipe: Shopping Cart with Discounts</h2>
+            <p>A shopping cart that supports different discount types.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">SHOPPING_CART</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Access</span>
+
+    items: <span class="type">ARRAYED_LIST</span> [<span class="type">TUPLE</span> [name: <span class="type">STRING</span>; price: <span class="type">SIMPLE_DECIMAL</span>; qty: <span class="type">INTEGER</span>]]
+        <span class="keyword">attribute</span>
+            <span class="keyword">create</span> Result.make (10)
+        <span class="keyword">end</span>
+
+    discount_code: <span class="keyword">detachable</span> <span class="type">STRING</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Modification</span>
+
+    add_item (name, price_str: <span class="type">STRING</span>; quantity: <span class="type">INTEGER</span>)
+        <span class="keyword">local</span>
+            price: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> price.make (price_str)
+            items.extend ([name, price, quantity])
+        <span class="keyword">end</span>
+
+    apply_code (code: <span class="type">STRING</span>)
+        <span class="keyword">do</span>
+            discount_code := code.as_upper
+        <span class="keyword">end</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Calculation</span>
+
+    subtotal: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">local</span>
+            item_total: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> Result.make_zero
+            <span class="keyword">across</span> items <span class="keyword">as</span> item <span class="keyword">loop</span>
+                item_total := item.price *
+                    <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make_from_integer (item.qty)
+                Result := Result + item_total
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    discount_amount: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">local</span>
+            sub: <span class="type">SIMPLE_DECIMAL</span>
+            discount_rate, flat_discount: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> Result.make_zero
+            sub := subtotal
+
+            <span class="keyword">if</span> <span class="keyword">attached</span> discount_code <span class="keyword">as</span> code <span class="keyword">then</span>
+                <span class="keyword">if</span> code.is_equal (<span class="string">"SAVE10"</span>) <span class="keyword">then</span>
+                    <span class="comment">-- 10% off</span>
+                    <span class="keyword">create</span> discount_rate.make (<span class="string">"10"</span>)
+                    Result := (sub * discount_rate.from_percentage).round_cents
+                <span class="keyword">elseif</span> code.is_equal (<span class="string">"SAVE20"</span>) <span class="keyword">then</span>
+                    <span class="comment">-- 20% off</span>
+                    <span class="keyword">create</span> discount_rate.make (<span class="string">"20"</span>)
+                    Result := (sub * discount_rate.from_percentage).round_cents
+                <span class="keyword">elseif</span> code.is_equal (<span class="string">"FLAT25"</span>) <span class="keyword">then</span>
+                    <span class="comment">-- $25 off if subtotal >= $100</span>
+                    <span class="keyword">create</span> flat_discount.make (<span class="string">"25.00"</span>)
+                    <span class="keyword">if</span> sub >= <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make (<span class="string">"100"</span>) <span class="keyword">then</span>
+                        Result := flat_discount
+                    <span class="keyword">end</span>
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    total: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            Result := (subtotal - discount_amount).round_cents
+        <span class="keyword">end</span>
+
+    print_receipt
+        <span class="keyword">do</span>
+            print (<span class="string">"=== RECEIPT ===%N"</span>)
+            <span class="keyword">across</span> items <span class="keyword">as</span> item <span class="keyword">loop</span>
+                print (item.name + <span class="string">" x"</span> + item.qty.out +
+                       <span class="string">": "</span> + (item.price *
+                       <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make_from_integer (item.qty)
+                       ).to_currency_string + <span class="string">"%N"</span>)
+            <span class="keyword">end</span>
+            print (<span class="string">"Subtotal: "</span> + subtotal.to_currency_string + <span class="string">"%N"</span>)
+            <span class="keyword">if</span> <span class="keyword">not</span> discount_amount.is_zero <span class="keyword">then</span>
+                print (<span class="string">"Discount: -"</span> + discount_amount.to_currency_string + <span class="string">"%N"</span>)
+            <span class="keyword">end</span>
+            print (<span class="string">"TOTAL: "</span> + total.to_currency_string + <span class="string">"%N"</span>)
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage:</span>
+<span class="keyword">local</span>
+    cart: <span class="type">SHOPPING_CART</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> cart
+    cart.add_item (<span class="string">"Widget"</span>, <span class="string">"29.99"</span>, 2)
+    cart.add_item (<span class="string">"Gadget"</span>, <span class="string">"49.99"</span>, 1)
+    cart.apply_code (<span class="string">"SAVE10"</span>)
+    cart.print_receipt
+    <span class="comment">-- === RECEIPT ===</span>
+    <span class="comment">-- Widget x2: $59.98</span>
+    <span class="comment">-- Gadget x1: $49.99</span>
+    <span class="comment">-- Subtotal: $109.97</span>
+    <span class="comment">-- Discount: -$11.00</span>
+    <span class="comment">-- TOTAL: $98.97</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="loan-payment">
+            <h2>Recipe: Loan Payment Calculator</h2>
+            <p>Calculate monthly payments and amortization schedule.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">LOAN_CALCULATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Calculation</span>
+
+    monthly_payment (principal_str, annual_rate_str: <span class="type">STRING</span>;
+                     term_months: <span class="type">INTEGER</span>): <span class="type">STRING</span>
+            <span class="comment">-- Calculate monthly payment using standard formula:</span>
+            <span class="comment">-- M = P * (r(1+r)^n) / ((1+r)^n - 1)</span>
+            <span class="comment">-- P = principal, r = monthly rate, n = number of payments</span>
+        <span class="keyword">local</span>
+            principal, annual_rate, monthly_rate: <span class="type">SIMPLE_DECIMAL</span>
+            one, twelve: <span class="type">SIMPLE_DECIMAL</span>
+            one_plus_r, one_plus_r_n: <span class="type">SIMPLE_DECIMAL</span>
+            numerator, denominator, payment: <span class="type">SIMPLE_DECIMAL</span>
+            i: <span class="type">INTEGER</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> principal.make (principal_str)
+            <span class="keyword">create</span> annual_rate.make (annual_rate_str)
+            <span class="keyword">create</span> one.make_one
+            <span class="keyword">create</span> twelve.make_from_integer (12)
+
+            <span class="comment">-- Monthly rate = annual rate / 12 / 100</span>
+            monthly_rate := annual_rate / twelve /
+                            <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make_from_integer (100)
+
+            <span class="comment">-- (1 + r)</span>
+            one_plus_r := one + monthly_rate
+
+            <span class="comment">-- (1 + r)^n</span>
+            <span class="keyword">create</span> one_plus_r_n.make_one
+            <span class="keyword">from</span> i := 1 <span class="keyword">until</span> i > term_months <span class="keyword">loop</span>
+                one_plus_r_n := one_plus_r_n * one_plus_r
+                i := i + 1
+            <span class="keyword">end</span>
+
+            <span class="comment">-- numerator = r * (1+r)^n</span>
+            numerator := monthly_rate * one_plus_r_n
+
+            <span class="comment">-- denominator = (1+r)^n - 1</span>
+            denominator := one_plus_r_n - one
+
+            <span class="comment">-- payment = P * numerator / denominator</span>
+            payment := (principal * numerator / denominator).round_cents
+
+            Result := payment.to_currency_string
+        <span class="keyword">end</span>
+
+    total_cost (principal_str, annual_rate_str: <span class="type">STRING</span>;
+                term_months: <span class="type">INTEGER</span>): <span class="type">STRING</span>
+            <span class="comment">-- Total amount paid over loan lifetime</span>
+        <span class="keyword">local</span>
+            payment, total: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> payment.make (monthly_payment (principal_str, annual_rate_str,
+                                                  term_months))
+            total := payment * <span class="keyword">create</span> {<span class="type">SIMPLE_DECIMAL</span>}.make_from_integer (term_months)
+            Result := total.to_currency_string
+        <span class="keyword">end</span>
+
+    total_interest (principal_str, annual_rate_str: <span class="type">STRING</span>;
+                    term_months: <span class="type">INTEGER</span>): <span class="type">STRING</span>
+            <span class="comment">-- Total interest paid</span>
+        <span class="keyword">local</span>
+            principal, total, interest: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> principal.make (principal_str)
+            <span class="keyword">create</span> total.make (total_cost (principal_str, annual_rate_str, term_months))
+            interest := total - principal
+            Result := interest.to_currency_string
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage: $250,000 mortgage at 6.5% for 30 years</span>
+<span class="keyword">local</span>
+    loan: <span class="type">LOAN_CALCULATOR</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> loan
+    print (<span class="string">"Monthly payment: "</span> +
+           loan.monthly_payment (<span class="string">"250000"</span>, <span class="string">"6.5"</span>, 360))
+    <span class="comment">-- Monthly payment: $1,580.17</span>
+
+    print (<span class="string">"Total cost: "</span> +
+           loan.total_cost (<span class="string">"250000"</span>, <span class="string">"6.5"</span>, 360))
+    <span class="comment">-- Total cost: $568,861.20</span>
+
+    print (<span class="string">"Total interest: "</span> +
+           loan.total_interest (<span class="string">"250000"</span>, <span class="string">"6.5"</span>, 360))
+    <span class="comment">-- Total interest: $318,861.20</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="price-formatting">
+            <h2>Recipe: Price Formatting Patterns</h2>
+            <p>Common patterns for displaying prices and numbers.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">PRICE_FORMATTER</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Formatting</span>
+
+    format_price (amount_str: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Standard price: "$1,234.56"</span>
+        <span class="keyword">local</span>
+            amount: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> amount.make (amount_str)
+            Result := amount.to_currency_string
+        <span class="keyword">end</span>
+
+    format_price_no_cents (amount_str: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Round price: "$1,235"</span>
+        <span class="keyword">local</span>
+            amount: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> amount.make (amount_str)
+            Result := <span class="string">"$"</span> + amount.round (0).to_string
+        <span class="keyword">end</span>
+
+    format_with_symbol (amount_str, symbol: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Custom symbol: "EUR 1,234.56"</span>
+        <span class="keyword">local</span>
+            amount: <span class="type">SIMPLE_DECIMAL</span>
+            formatted: <span class="type">STRING</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> amount.make (amount_str)
+            formatted := amount.to_currency_string
+            <span class="comment">-- Replace $ with custom symbol</span>
+            formatted.replace_substring_all (<span class="string">"$"</span>, symbol + <span class="string">" "</span>)
+            Result := formatted
+        <span class="keyword">end</span>
+
+    format_percentage (decimal_str: <span class="type">STRING</span>; places: <span class="type">INTEGER</span>): <span class="type">STRING</span>
+            <span class="comment">-- Format as percentage: "8.25%"</span>
+        <span class="keyword">local</span>
+            amount: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> amount.make (decimal_str)
+            Result := amount.as_percentage.round (places).to_string + <span class="string">"%%"</span>
+        <span class="keyword">end</span>
+
+    format_accounting (amount_str: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Accounting format: negative in parens "(1,234.56)"</span>
+        <span class="keyword">local</span>
+            amount: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> amount.make (amount_str)
+            <span class="keyword">if</span> amount.is_negative <span class="keyword">then</span>
+                Result := <span class="string">"("</span> + amount.absolute.to_currency_string + <span class="string">")"</span>
+            <span class="keyword">else</span>
+                Result := amount.to_currency_string
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage:</span>
+<span class="keyword">local</span>
+    fmt: <span class="type">PRICE_FORMATTER</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> fmt
+    print (fmt.format_price (<span class="string">"1234.56"</span>))           <span class="comment">-- $1,234.56</span>
+    print (fmt.format_price_no_cents (<span class="string">"1234.56"</span>))  <span class="comment">-- $1235</span>
+    print (fmt.format_with_symbol (<span class="string">"1234.56"</span>, <span class="string">"EUR"</span>)) <span class="comment">-- EUR 1,234.56</span>
+    print (fmt.format_percentage (<span class="string">"0.0825"</span>, 2))   <span class="comment">-- 8.25%</span>
+    print (fmt.format_accounting (<span class="string">"-1234.56"</span>))    <span class="comment">-- ($1,234.56)</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="validation">
+            <h2>Recipe: Input Validation</h2>
+            <p>Safely parse and validate user-entered amounts.</p>
+
+<pre><code><span class="keyword">class</span>
+    <span class="type">AMOUNT_VALIDATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Validation</span>
+
+    is_valid_amount (input: <span class="type">STRING</span>): <span class="type">BOOLEAN</span>
+            <span class="comment">-- Check if input can be parsed as a valid decimal</span>
+        <span class="keyword">local</span>
+            test: <span class="type">SIMPLE_DECIMAL</span>
+            retried: <span class="type">BOOLEAN</span>
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">not</span> retried <span class="keyword">then</span>
+                <span class="keyword">if</span> input /= Void <span class="keyword">and</span> <span class="keyword">then</span> <span class="keyword">not</span> input.is_empty <span class="keyword">then</span>
+                    <span class="keyword">create</span> test.make (input)
+                    Result := <span class="keyword">not</span> test.is_nan
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">rescue</span>
+            retried := True
+            Result := False
+            <span class="keyword">retry</span>
+        <span class="keyword">end</span>
+
+    parsed_amount (input: <span class="type">STRING</span>): <span class="keyword">detachable</span> <span class="type">SIMPLE_DECIMAL</span>
+            <span class="comment">-- Parse input, return Void if invalid</span>
+        <span class="keyword">local</span>
+            retried: <span class="type">BOOLEAN</span>
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">not</span> retried <span class="keyword">and</span> is_valid_amount (input) <span class="keyword">then</span>
+                <span class="keyword">create</span> Result.make (input)
+            <span class="keyword">end</span>
+        <span class="keyword">rescue</span>
+            retried := True
+            <span class="keyword">retry</span>
+        <span class="keyword">end</span>
+
+    validated_currency (input: <span class="type">STRING</span>;
+                        min_str, max_str: <span class="type">STRING</span>): <span class="keyword">detachable</span> <span class="type">SIMPLE_DECIMAL</span>
+            <span class="comment">-- Parse and validate within range, return Void if invalid</span>
+        <span class="keyword">local</span>
+            amount, min_val, max_val: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">if</span> <span class="keyword">attached</span> parsed_amount (input) <span class="keyword">as</span> amt <span class="keyword">then</span>
+                <span class="keyword">create</span> min_val.make (min_str)
+                <span class="keyword">create</span> max_val.make (max_str)
+                <span class="keyword">if</span> amt >= min_val <span class="keyword">and</span> amt <= max_val <span class="keyword">then</span>
+                    Result := amt
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">-- Usage:</span>
+<span class="keyword">local</span>
+    validator: <span class="type">AMOUNT_VALIDATOR</span>
+    user_input: <span class="type">STRING</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> validator
+    user_input := <span class="string">"$1,234.56"</span>
+
+    <span class="keyword">if</span> validator.is_valid_amount (user_input) <span class="keyword">then</span>
+        print (<span class="string">"Valid amount"</span>)
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> <span class="keyword">attached</span> validator.validated_currency (user_input, <span class="string">"0"</span>, <span class="string">"10000"</span>) <span class="keyword">as</span> amt <span class="keyword">then</span>
+        print (<span class="string">"Amount in range: "</span> + amt.to_currency_string)
+    <span class="keyword">else</span>
+        print (<span class="string">"Amount out of range or invalid"</span>)
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

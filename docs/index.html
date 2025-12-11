@@ -17,14 +17,17 @@
         <div class="badges">
             <span class="badge badge-version">v1.0.0</span>
             <span class="badge badge-license">MIT</span>
+            <span class="badge badge-dbc">DbC Enforced</span>
         </div>
     </header>
 
     <nav>
         <ul>
             <li><a href="#overview">Overview</a></li>
-            <li><a href="#quick-start">Quick Start</a></li>
-            <li><a href="#features">Features</a></li>
+            <li><a href="user-guide.html">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
             <li><a href="https://github.com/simple-eiffel/simple_decimal">GitHub</a></li>
         </ul>
     </nav>
@@ -37,69 +40,128 @@
                 arbitrary-precision decimal arithmetic for Eiffel. Perfect for <strong>financial calculations</strong>
                 where binary floating-point errors are unacceptable.
             </p>
-            <p>
-                Binary floating-point (REAL, DOUBLE) cannot represent many decimal fractions exactly.
-                The classic example: <code>0.1 + 0.2 = 0.30000000000000004</code>. With simple_decimal,
-                <code>0.1 + 0.2 = 0.3</code> exactly.
-            </p>
-            <p>
-                Part of the <strong>simple_*</strong> ecosystem of focused, single-purpose Eiffel libraries.
-            </p>
-        </section>
 
-        <section id="quick-start">
-            <h2>Quick Start</h2>
-
-            <div class="quick-start">
-                <h3>Installation</h3>
-                <p>Add to your ECF file:</p>
-<pre><code>&lt;library name="simple_decimal" location="$SIMPLE_DECIMAL/simple_decimal.ecf"/&gt;</code></pre>
+            <div class="highlight-box">
+                <h3>The Problem with Floating-Point</h3>
+                <p>Binary floating-point (REAL, DOUBLE) cannot represent many decimal fractions exactly:</p>
+<pre><code><span class="comment">-- DOUBLE fails silently!</span>
+io.put_double (0.1 + 0.2)  <span class="comment">-- Outputs: 0.30000000000000004  WRONG!</span></code></pre>
+                <p>This causes real-world problems: financial calculations that don't balance, prices that display
+                incorrectly, tax calculations off by a penny, and cumulative errors in accounting systems.</p>
             </div>
 
-            <h3>Basic Arithmetic</h3>
+            <div class="highlight-box success">
+                <h3>The Solution</h3>
 <pre><code><span class="keyword">local</span>
     a, b, total: <span class="type">SIMPLE_DECIMAL</span>
 <span class="keyword">do</span>
     <span class="keyword">create</span> a.make (<span class="string">"0.1"</span>)
     <span class="keyword">create</span> b.make (<span class="string">"0.2"</span>)
     total := a + b
-    print (total.out)  <span class="comment">-- "0.3" (exact!)</span>
+    print (total.out)  <span class="comment">-- Outputs: 0.3  CORRECT!</span>
+<span class="keyword">end</span></code></pre>
+            </div>
+        </section>
+
+        <section id="quick-start">
+            <h2>Quick Start</h2>
+
+            <h3>Installation</h3>
+            <ol>
+                <li>Set the environment variable:
+<pre><code>export SIMPLE_DECIMAL=/path/to/simple_decimal</code></pre>
+                </li>
+                <li>Add to your ECF file:
+<pre><code>&lt;library name="simple_decimal" location="$SIMPLE_DECIMAL/simple_decimal.ecf"/&gt;</code></pre>
+                </li>
+            </ol>
+
+            <h3>Basic Usage</h3>
+<pre><code><span class="keyword">class</span>
+    <span class="type">INVOICE_CALCULATOR</span>
+
+<span class="keyword">feature</span> <span class="comment">-- Calculation</span>
+
+    calculate_total (subtotal_str, tax_rate_str: <span class="type">STRING</span>): <span class="type">STRING</span>
+            <span class="comment">-- Calculate total with tax, returning formatted currency</span>
+        <span class="keyword">local</span>
+            subtotal, tax_rate, tax, total: <span class="type">SIMPLE_DECIMAL</span>
+        <span class="keyword">do</span>
+            <span class="keyword">create</span> subtotal.make (subtotal_str)
+            <span class="keyword">create</span> tax_rate.make (tax_rate_str)
+
+            <span class="comment">-- Calculate tax: subtotal * (rate / 100)</span>
+            tax := (subtotal * tax_rate.from_percentage).round_cents
+            total := subtotal + tax
+
+            Result := total.to_currency_string
+        <span class="keyword">end</span>
+
 <span class="keyword">end</span></code></pre>
 
-            <h3>Financial Calculations</h3>
-<pre><code><span class="keyword">local</span>
-    subtotal, tax_rate, tax, total: <span class="type">SIMPLE_DECIMAL</span>
-<span class="keyword">do</span>
-    <span class="keyword">create</span> subtotal.make (<span class="string">"47.99"</span>)
-    <span class="keyword">create</span> tax_rate.make (<span class="string">"8.25"</span>)
-
-    <span class="comment">-- Calculate tax</span>
-    tax := (subtotal * tax_rate.from_percentage).round_cents
-    total := subtotal + tax
-
-    print (total.to_currency_string)  <span class="comment">-- "$51.95"</span>
-<span class="keyword">end</span></code></pre>
+            <p><strong>Result:</strong> <code>calculate_total ("47.99", "8.25")</code> returns <code>"$51.95"</code></p>
         </section>
 
         <section id="features">
-            <h2>Features</h2>
-            <ul>
-                <li><strong>Arbitrary Precision</strong> - No floating-point errors</li>
-                <li><strong>Financial Operations</strong> - Currency formatting, percentages, bill splitting</li>
-                <li><strong>Multiple Rounding Modes</strong> - round_up, round_down, round_ceiling, round_floor, round_half_even</li>
-                <li><strong>Immutable Operations</strong> - All arithmetic returns new values</li>
-                <li><strong>Full Comparison</strong> - COMPARABLE interface for sorting</li>
-                <li><strong>Currency Formatting</strong> - to_currency_string with commas and symbols</li>
-                <li><strong>Percentage Calculations</strong> - add_percent, subtract_percent, as_percentage</li>
-                <li>IEEE 754-2008 compliant (via Gobo MA_DECIMAL)</li>
-                <li>Full Design by Contract support</li>
+            <h2>Key Features</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Arbitrary Precision</h3>
+                    <p>No floating-point representation errors. 0.1 + 0.2 = 0.3 exactly.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Financial Operations</h3>
+                    <p>Currency formatting, percentages, tax calculations, bill splitting with penny-perfect accuracy.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Multiple Rounding Modes</h3>
+                    <p>Banker's rounding (half-even), round up, round down, ceiling, floor, truncate.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Immutable Operations</h3>
+                    <p>All arithmetic returns new values. Thread-safe, predictable, no side effects.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Smart Parsing</h3>
+                    <p>Handles "$1,234.56", "1234.56", "-$99.99" automatically.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Design by Contract</h3>
+                    <p>Full preconditions, postconditions, and class invariants throughout.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="documentation">
+            <h2>Documentation</h2>
+            <ul class="doc-links">
+                <li><a href="user-guide.html"><strong>User Guide</strong></a> - Complete tutorial with examples</li>
+                <li><a href="api-reference.html"><strong>API Reference</strong></a> - Full feature documentation</li>
+                <li><a href="architecture.html"><strong>Architecture</strong></a> - Internal design and rationale</li>
+                <li><a href="cookbook.html"><strong>Cookbook</strong></a> - Real-world recipes and patterns</li>
             </ul>
+        </section>
+
+        <section id="standards">
+            <h2>Standards Compliance</h2>
+            <p>simple_decimal is built on Gobo's MA_DECIMAL which implements:</p>
+            <ul>
+                <li><strong>General Decimal Arithmetic Specification</strong> - IBM's decimal arithmetic standard</li>
+                <li><strong>IEEE 754-2008</strong> - Standard for floating-point arithmetic (decimal64/decimal128)</li>
+            </ul>
+            <p>This means your calculations follow the same rules used by financial institutions worldwide.</p>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 simple_* ecosystem. MIT License.</p>
-        <p><a href="https://github.com/simple-eiffel">GitHub</a></p>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem of focused, single-purpose Eiffel libraries.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
     </footer>
 </body>
 </html>

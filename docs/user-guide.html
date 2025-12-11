@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - simple_decimal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_decimal</h1>
+        <p class="tagline">User Guide</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="user-guide.html" class="active">User Guide</a></li>
+            <li><a href="api-reference.html">API Reference</a></li>
+            <li><a href="architecture.html">Architecture</a></li>
+            <li><a href="cookbook.html">Cookbook</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_decimal">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="introduction">
+            <h2>Introduction</h2>
+            <p>
+                This guide will teach you everything you need to know to effectively use simple_decimal
+                in your Eiffel applications. We'll start with the basics and progressively cover more
+                advanced topics.
+            </p>
+
+            <h3>Why Decimal Arithmetic Matters</h3>
+            <p>
+                If you've ever wondered why your financial calculations are "close but not quite right,"
+                binary floating-point is likely the culprit. Computers store numbers in binary, and many
+                common decimal fractions (like 0.1) cannot be represented exactly in binary.
+            </p>
+
+            <div class="highlight-box warning">
+                <h4>The Classic Example</h4>
+                <p>In virtually every programming language using binary floating-point:</p>
+<pre><code>0.1 + 0.2 = 0.30000000000000004</code></pre>
+                <p>This isn't a bug - it's fundamental to how binary floating-point works.
+                For financial applications, this is unacceptable.</p>
+            </div>
+        </section>
+
+        <section id="getting-started">
+            <h2>Getting Started</h2>
+
+            <h3>Installation</h3>
+            <ol>
+                <li><strong>Set the environment variable</strong> pointing to the library:
+<pre><code><span class="comment"># Unix/Linux/macOS</span>
+export SIMPLE_DECIMAL=/path/to/simple_decimal
+
+<span class="comment"># Windows</span>
+set SIMPLE_DECIMAL=C:\path\to\simple_decimal</code></pre>
+                </li>
+                <li><strong>Add to your ECF</strong> configuration file:
+<pre><code>&lt;library name="simple_decimal" location="$SIMPLE_DECIMAL/simple_decimal.ecf"/&gt;</code></pre>
+                </li>
+            </ol>
+
+            <h3>Your First Decimal</h3>
+<pre><code><span class="keyword">local</span>
+    price: <span class="type">SIMPLE_DECIMAL</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Create from string (most precise method)</span>
+    <span class="keyword">create</span> price.make (<span class="string">"19.99"</span>)
+
+    <span class="comment">-- Display it</span>
+    print (price.out)                  <span class="comment">-- "19.99"</span>
+    print (price.to_currency_string)   <span class="comment">-- "$19.99"</span>
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="creation">
+            <h2>Creating Decimals</h2>
+            <p>SIMPLE_DECIMAL offers several creation methods for different scenarios:</p>
+
+            <h3>From String (Recommended)</h3>
+            <p>Creating from strings is the most precise method because the value is parsed exactly as written:</p>
+<pre><code><span class="keyword">create</span> price.make (<span class="string">"19.99"</span>)
+<span class="keyword">create</span> tax_rate.make (<span class="string">"0.0825"</span>)    <span class="comment">-- 8.25% as decimal</span>
+<span class="keyword">create</span> negative.make (<span class="string">"-42.50"</span>)
+<span class="keyword">create</span> large.make (<span class="string">"1234567890.123456789"</span>)</code></pre>
+
+            <h3>Smart String Parsing</h3>
+            <p>The parser automatically handles currency symbols and thousand separators:</p>
+<pre><code><span class="keyword">create</span> price.make (<span class="string">"$1,234.56"</span>)     <span class="comment">-- Creates 1234.56</span>
+<span class="keyword">create</span> price.make (<span class="string">"-$99.99"</span>)       <span class="comment">-- Creates -99.99</span>
+<span class="keyword">create</span> price.make (<span class="string">"1,000,000"</span>)    <span class="comment">-- Creates 1000000</span></code></pre>
+
+            <h3>From Integer</h3>
+<pre><code><span class="keyword">create</span> count.make_from_integer (42)
+<span class="keyword">create</span> negative.make_from_integer (-100)</code></pre>
+
+            <h3>From Dollars and Cents</h3>
+            <p>Convenient for currency applications:</p>
+<pre><code><span class="keyword">create</span> amount.make_currency (19, 99)   <span class="comment">-- Creates 19.99</span>
+<span class="keyword">create</span> amount.make_currency (0, 50)    <span class="comment">-- Creates 0.50</span>
+<span class="keyword">create</span> amount.make_currency (-5, 25)   <span class="comment">-- Creates -5.25</span></code></pre>
+
+            <h3>Special Values</h3>
+<pre><code><span class="keyword">create</span> zero.make_zero    <span class="comment">-- Creates 0</span>
+<span class="keyword">create</span> one.make_one      <span class="comment">-- Creates 1</span></code></pre>
+
+            <div class="highlight-box warning">
+                <h4>Avoid: Creating from DOUBLE</h4>
+                <p>While <code>make_from_double</code> exists, avoid it when precision matters:</p>
+<pre><code><span class="comment">-- NOT recommended for financial work:</span>
+<span class="keyword">create</span> d.make_from_double (0.1)
+<span class="comment">-- The imprecision already exists in the DOUBLE literal!</span></code></pre>
+                <p>Use string creation instead: <code>create d.make ("0.1")</code></p>
+            </div>
+        </section>
+
+        <section id="arithmetic">
+            <h2>Arithmetic Operations</h2>
+            <p>
+                All arithmetic operations return <strong>new</strong> SIMPLE_DECIMAL objects.
+                The original values are never modified (immutable pattern).
+            </p>
+
+            <h3>Basic Operations</h3>
+<pre><code><span class="keyword">local</span>
+    a, b, result: <span class="type">SIMPLE_DECIMAL</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> a.make (<span class="string">"100.00"</span>)
+    <span class="keyword">create</span> b.make (<span class="string">"25.50"</span>)
+
+    result := a + b        <span class="comment">-- Addition:       125.50</span>
+    result := a - b        <span class="comment">-- Subtraction:     74.50</span>
+    result := a * b        <span class="comment">-- Multiplication: 2550.00</span>
+    result := a / b        <span class="comment">-- Division:         3.921568...</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>Integer Division and Modulo</h3>
+<pre><code><span class="keyword">create</span> a.make (<span class="string">"100"</span>)
+<span class="keyword">create</span> b.make (<span class="string">"30"</span>)
+
+result := a // b    <span class="comment">-- Integer division: 3</span>
+result := a \\ b    <span class="comment">-- Modulo (remainder): 10</span></code></pre>
+
+            <h3>Other Operations</h3>
+<pre><code>result := price.negate      <span class="comment">-- Flip sign: 19.99 -> -19.99</span>
+result := price.absolute    <span class="comment">-- Absolute value: -19.99 -> 19.99</span>
+result := price.power (2)   <span class="comment">-- Exponentiation: 10^2 = 100</span></code></pre>
+
+            <h3>Chaining Operations</h3>
+            <p>Because operations return new decimals, you can chain them:</p>
+<pre><code><span class="comment">-- Calculate: (price * quantity) - discount</span>
+total := (price * quantity) - discount
+
+<span class="comment">-- Calculate: subtotal + tax, rounded to cents</span>
+total := (subtotal + tax).round_cents</code></pre>
+        </section>
+
+        <section id="comparison">
+            <h2>Comparison</h2>
+            <p>SIMPLE_DECIMAL implements COMPARABLE, so you can use standard comparison operators:</p>
+
+<pre><code><span class="keyword">if</span> price < budget <span class="keyword">then</span>
+    print (<span class="string">"Affordable"</span>)
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> balance >= minimum <span class="keyword">then</span>
+    print (<span class="string">"Account in good standing"</span>)
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> a.is_equal (b) <span class="keyword">then</span>
+    print (<span class="string">"Values are equal"</span>)
+<span class="keyword">end</span></code></pre>
+
+            <h3>Available Comparisons</h3>
+            <ul>
+                <li><code>&lt;</code> - Less than</li>
+                <li><code>&lt;=</code> - Less than or equal</li>
+                <li><code>&gt;</code> - Greater than</li>
+                <li><code>&gt;=</code> - Greater than or equal</li>
+                <li><code>is_equal</code> - Equality test</li>
+            </ul>
+
+            <h3>Status Queries</h3>
+<pre><code><span class="keyword">if</span> amount.is_zero <span class="keyword">then</span> ...
+<span class="keyword">if</span> amount.is_negative <span class="keyword">then</span> ...
+<span class="keyword">if</span> amount.is_positive <span class="keyword">then</span> ...
+<span class="keyword">if</span> amount.is_integer <span class="keyword">then</span> ...
+<span class="keyword">if</span> amount.is_nan <span class="keyword">then</span> ...      <span class="comment">-- Not a Number</span>
+<span class="keyword">if</span> amount.is_infinity <span class="keyword">then</span> ...</code></pre>
+        </section>
+
+        <section id="rounding">
+            <h2>Rounding</h2>
+            <p>Financial applications often require specific rounding behavior. SIMPLE_DECIMAL provides multiple rounding modes:</p>
+
+            <h3>Round to N Decimal Places</h3>
+<pre><code><span class="comment">-- Default rounding (banker's rounding / half-even)</span>
+result := price.round (2)     <span class="comment">-- 19.995 -> 20.00</span>
+result := price.round (0)     <span class="comment">-- 19.5 -> 20 (rounds to even)</span>
+
+<span class="comment">-- Shortcut for currency (2 decimal places)</span>
+result := price.round_cents   <span class="comment">-- Same as round(2)</span></code></pre>
+
+            <h3>Rounding Modes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Description</th>
+                        <th>2.5 becomes</th>
+                        <th>-2.5 becomes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>round(n)</code></td>
+                        <td>Banker's rounding (half to even)</td>
+                        <td>2</td>
+                        <td>-2</td>
+                    </tr>
+                    <tr>
+                        <td><code>round_up(n)</code></td>
+                        <td>Away from zero</td>
+                        <td>3</td>
+                        <td>-3</td>
+                    </tr>
+                    <tr>
+                        <td><code>round_down(n)</code></td>
+                        <td>Toward zero (truncate)</td>
+                        <td>2</td>
+                        <td>-2</td>
+                    </tr>
+                    <tr>
+                        <td><code>round_ceiling(n)</code></td>
+                        <td>Toward positive infinity</td>
+                        <td>3</td>
+                        <td>-2</td>
+                    </tr>
+                    <tr>
+                        <td><code>round_floor(n)</code></td>
+                        <td>Toward negative infinity</td>
+                        <td>2</td>
+                        <td>-3</td>
+                    </tr>
+                    <tr>
+                        <td><code>truncate</code></td>
+                        <td>Remove fractional part</td>
+                        <td>2</td>
+                        <td>-2</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>When to Use Which</h3>
+            <ul>
+                <li><strong>Banker's rounding (default)</strong> - General financial calculations, statistical neutrality</li>
+                <li><strong>Round up</strong> - When you must ensure a minimum (e.g., fees, taxes)</li>
+                <li><strong>Round down</strong> - When you must not exceed (e.g., available balance)</li>
+                <li><strong>Ceiling/Floor</strong> - When direction matters more than magnitude</li>
+            </ul>
+        </section>
+
+        <section id="output">
+            <h2>Output Formatting</h2>
+
+            <h3>Basic Output</h3>
+<pre><code><span class="keyword">create</span> amount.make (<span class="string">"1234.567"</span>)
+
+print (amount.out)           <span class="comment">-- "1234.567"</span>
+print (amount.to_string)     <span class="comment">-- "1234.567"</span></code></pre>
+
+            <h3>Currency Formatting</h3>
+<pre><code><span class="keyword">create</span> amount.make (<span class="string">"1234.56"</span>)
+print (amount.to_currency_string)    <span class="comment">-- "$1,234.56"</span>
+
+<span class="keyword">create</span> negative.make (<span class="string">"-99.99"</span>)
+print (negative.to_currency_string)  <span class="comment">-- "-$99.99"</span></code></pre>
+
+            <h3>Extracting Parts</h3>
+<pre><code><span class="keyword">create</span> price.make (<span class="string">"19.95"</span>)
+
+print (price.dollars)    <span class="comment">-- 19 (INTEGER)</span>
+print (price.cents)      <span class="comment">-- 95 (INTEGER)</span></code></pre>
+
+            <h3>Type Conversions</h3>
+<pre><code><span class="comment">-- To integer (truncates)</span>
+i := price.to_integer
+
+<span class="comment">-- To double (may lose precision)</span>
+d := price.to_double</code></pre>
+        </section>
+
+        <section id="financial">
+            <h2>Financial Operations</h2>
+            <p>SIMPLE_DECIMAL includes operations specifically designed for financial calculations:</p>
+
+            <h3>Percentage Calculations</h3>
+<pre><code><span class="keyword">local</span>
+    price, tax_rate, discount, result: <span class="type">SIMPLE_DECIMAL</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> price.make (<span class="string">"100.00"</span>)
+    <span class="keyword">create</span> tax_rate.make (<span class="string">"8.25"</span>)      <span class="comment">-- 8.25%</span>
+    <span class="keyword">create</span> discount.make (<span class="string">"15.0"</span>)     <span class="comment">-- 15%</span>
+
+    <span class="comment">-- Add 8.25% tax to price</span>
+    result := price.add_percent (tax_rate)        <span class="comment">-- 108.25</span>
+
+    <span class="comment">-- Subtract 15% discount from price</span>
+    result := price.subtract_percent (discount)   <span class="comment">-- 85.00</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>Percentage Conversions</h3>
+<pre><code><span class="keyword">create</span> rate.make (<span class="string">"8.25"</span>)
+
+<span class="comment">-- Convert percentage to decimal (for multiplication)</span>
+decimal_rate := rate.from_percentage    <span class="comment">-- 0.0825</span>
+
+<span class="comment">-- Convert decimal to percentage (for display)</span>
+<span class="keyword">create</span> decimal_rate.make (<span class="string">"0.0825"</span>)
+percent := decimal_rate.as_percentage   <span class="comment">-- 8.25</span></code></pre>
+
+            <h3>Calculate What Percent One Value Is of Another</h3>
+<pre><code><span class="keyword">create</span> tip.make (<span class="string">"15.00"</span>)
+<span class="keyword">create</span> bill.make (<span class="string">"75.00"</span>)
+
+percentage := tip.percent_of (bill)    <span class="comment">-- 20.0 (tip is 20% of bill)</span></code></pre>
+
+            <h3>Splitting Bills</h3>
+            <p>The <code>split</code> feature divides an amount into equal parts while handling the remainder correctly:</p>
+<pre><code><span class="keyword">create</span> bill.make (<span class="string">"100.00"</span>)
+parts := bill.split (3)
+
+<span class="comment">-- Result: [$33.34, $33.33, $33.33]</span>
+<span class="comment">-- Sum equals exactly $100.00</span></code></pre>
+            <p>The extra penny goes to the first parts, ensuring the total always equals the original amount exactly.</p>
+        </section>
+
+        <section id="best-practices">
+            <h2>Best Practices</h2>
+
+            <h3>1. Always Create from Strings</h3>
+            <p>When precision matters, always create decimals from strings:</p>
+<pre><code><span class="comment">-- GOOD: Exact representation</span>
+<span class="keyword">create</span> price.make (<span class="string">"0.1"</span>)
+
+<span class="comment">-- AVOID: Imprecision may already exist</span>
+<span class="keyword">create</span> price.make_from_double (0.1)</code></pre>
+
+            <h3>2. Round at the End</h3>
+            <p>Perform calculations first, then round the final result:</p>
+<pre><code><span class="comment">-- GOOD: Maximum precision during calculation</span>
+total := (subtotal * tax_rate).round_cents
+
+<span class="comment">-- AVOID: Rounding too early loses precision</span>
+tax := (subtotal * tax_rate).round_cents
+total := subtotal + tax  <span class="comment">-- May have accumulated error</span></code></pre>
+
+            <h3>3. Use Appropriate Rounding</h3>
+            <p>Choose rounding mode based on business requirements:</p>
+<pre><code><span class="comment">-- Tax calculations: often round up (in favor of tax authority)</span>
+tax := calculated_tax.round_up (2)
+
+<span class="comment">-- Available balance: round down (don't overspend)</span>
+available := balance.round_down (2)</code></pre>
+
+            <h3>4. Handle Edge Cases</h3>
+<pre><code><span class="comment">-- Check before division</span>
+<span class="keyword">if</span> <span class="keyword">not</span> divisor.is_zero <span class="keyword">then</span>
+    result := amount / divisor
+<span class="keyword">end</span>
+
+<span class="comment">-- Check for special values</span>
+<span class="keyword">if</span> <span class="keyword">not</span> amount.is_nan <span class="keyword">and</span> <span class="keyword">not</span> amount.is_infinity <span class="keyword">then</span>
+    i := amount.to_integer
+<span class="keyword">end</span></code></pre>
+
+            <h3>5. Use Contracts</h3>
+            <p>SIMPLE_DECIMAL has extensive contracts. Enable assertions during development:</p>
+<pre><code><span class="comment">-- In your ECF:</span>
+&lt;option&gt;
+    &lt;assertions precondition="true" postcondition="true"/&gt;
+&lt;/option&gt;</code></pre>
+        </section>
+
+        <section id="next-steps">
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="api-reference.html">API Reference</a> - Complete documentation of all features</li>
+                <li><a href="cookbook.html">Cookbook</a> - Real-world examples and patterns</li>
+                <li><a href="architecture.html">Architecture</a> - Understand the internal design</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem.</p>
+        <p>&copy; 2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>
