@@ -19,6 +19,6 @@
 	</target>
 	<target name="simple_decimal_tests" extends="simple_decimal">
 		<root class="SIMPLE_DECIMAL_TESTS" feature="make"/>
-		<cluster name="tests" location=".\tests\" recursive="true"/>
+		<cluster name="test_classes" location=".\testing\" recursive="true"/>
 	</target>
 </system>
