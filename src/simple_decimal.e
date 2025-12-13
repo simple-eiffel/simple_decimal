@@ -226,10 +226,10 @@ feature -- Conversion
 			not_nan: not is_nan
 			not_infinity: not is_infinity
 		local
-			l_truncated: MA_DECIMAL
+			l_truncated: SIMPLE_DECIMAL
 		do
-			l_truncated := decimal.round_to_integer (context)
-			Result := l_truncated.to_integer
+			l_truncated := truncate
+			Result := l_truncated.decimal.to_integer
 		end
 
 	to_double: DOUBLE
@@ -249,8 +249,10 @@ feature -- Conversion
 
 	to_string: STRING
 			-- Plain string representation (no scientific notation)
+			-- Trailing zeros after decimal point are removed
 		do
 			Result := decimal.to_engineering_string
+			Result := strip_trailing_zeros (Result)
 		end
 
 	to_currency_string: STRING
@@ -316,12 +318,12 @@ feature -- Conversion
 		end
 
 	dollars: INTEGER
-			-- Integer dollar amount (absolute value)
+			-- Integer dollar amount (absolute value, truncated)
 		local
-			l_truncated: MA_DECIMAL
+			l_abs: SIMPLE_DECIMAL
 		do
-			l_truncated := decimal.abs.round_to_integer (context)
-			Result := l_truncated.to_integer
+			create l_abs.make_from_decimal (decimal.abs)
+			Result := l_abs.truncate.decimal.to_integer
 		end
 
 	cents: INTEGER
@@ -680,6 +682,29 @@ feature {NONE} -- Implementation
 					Result.append_character (c.to_character_8)
 				end
 				i := i + 1
+			end
+		end
+
+	strip_trailing_zeros (a_str: STRING): STRING
+			-- Remove trailing zeros after decimal point.
+			-- "5.000" -> "5", "5.100" -> "5.1", "5.00" -> "5"
+		local
+			dot_pos: INTEGER
+		do
+			Result := a_str.twin
+			dot_pos := Result.index_of ('.', 1)
+			if dot_pos > 0 then
+				-- Has decimal point, strip trailing zeros
+				from
+				until
+					Result.count <= dot_pos or else Result [Result.count] /= '0'
+				loop
+					Result.remove_tail (1)
+				end
+				-- Remove decimal point if no decimals left
+				if Result.count = dot_pos then
+					Result.remove_tail (1)
+				end
 			end
 		end
 
