@@ -1,0 +1,9 @@
+{
+  "name": "simple_decimal",
+  "version": "0.1.0",
+  "description": "simple_decimal - Clean wrapper for precise decimal arithmetic (financial calculations)",
+  "author": "Larry Rix",
+  "license": "MIT",
+  "category": "utilities",
+  "keywords": ["decimal", "precision", "math", "finance"]
+}
