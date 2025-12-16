@@ -169,10 +169,10 @@ print (amount.cents.out)         -- "56"
 
 ### Environment Setup
 
-Add to your environment:
+Add to your environment (one-time setup for all simple_* libraries):
 
 ```bash
-export SIMPLE_DECIMAL=/path/to/simple_decimal
+export SIMPLE_EIFFEL=D:\prod
 ```
 
 ### ECF Configuration
@@ -180,7 +180,7 @@ export SIMPLE_DECIMAL=/path/to/simple_decimal
 Add to your project's `.ecf` file:
 
 ```xml
-<library name="simple_decimal" location="$SIMPLE_DECIMAL/simple_decimal.ecf"/>
+<library name="simple_decimal" location="$SIMPLE_EIFFEL/simple_decimal/simple_decimal.ecf"/>
 ```
 
 ### Dependencies
