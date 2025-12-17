@@ -720,6 +720,14 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature {NONE} -- Type references (for `like` anchors only)
+
+	decimal_typeref: detachable SIMPLE_DECIMAL
+		require
+			type_ref_only_never_call: False
+		attribute
+		end
+
 invariant
 	decimal_exists: decimal /= Void
 	context_exists: context /= Void
