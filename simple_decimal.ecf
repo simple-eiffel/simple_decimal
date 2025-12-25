@@ -14,7 +14,7 @@
 			<void_safety support="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
-		<library name="decimal" location="$ISE_LIBRARY\contrib\library\gobo\library\math\library.ecf"/>
+		<library name="decimal" location="$GOBO_LIBRARY/math\library.ecf"/>
 		<cluster name="src" location=".\src\" recursive="true"/>
 	</target>
 	<target name="simple_decimal_tests" extends="simple_decimal">
