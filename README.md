@@ -1,20 +1,28 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/simple-eiffel/.github/main/profile/assets/logo.png" alt="simple_ library logo" width="400">
+  <img src="docs/images/logo.png" alt="simple_decimal logo" width="200">
 </p>
 
-# simple_decimal
+<h1 align="center">simple_decimal</h1>
 
-**[Documentation](https://simple-eiffel.github.io/simple_decimal/)** | **[GitHub](https://github.com/simple-eiffel/simple_decimal)**
+<p align="center">
+  <a href="https://simple-eiffel.github.io/simple_decimal/">Documentation</a> •
+  <a href="https://github.com/simple-eiffel/simple_decimal">GitHub</a>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Eiffel](https://img.shields.io/badge/Eiffel-25.02-blue.svg)](https://www.eiffel.org/)
-[![Design by Contract](https://img.shields.io/badge/DbC-enforced-orange.svg)]()
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
+  <img src="https://img.shields.io/badge/Eiffel-25.02-purple.svg" alt="Eiffel 25.02">
+  <img src="https://img.shields.io/badge/DBC-Contracts-green.svg" alt="Design by Contract">
+</p>
 
-Clean wrapper for precise decimal arithmetic in Eiffel. Perfect for financial calculations where floating-point errors are unacceptable.
+**Precise decimal arithmetic for financial calculations** — No floating-point errors. Part of the [Simple Eiffel](https://github.com/simple-eiffel) ecosystem.
 
-Part of the [Simple Eiffel](https://github.com/simple-eiffel) ecosystem.
+## Status
 
-**Developed using AI-assisted methodology:** Built interactively with Claude Opus 4.5 following rigorous Design by Contract principles.
+✅ **Production Ready** — v1.0.0
+- Arbitrary-precision decimal arithmetic
+- Financial operations (currency, percentage, split)
+- Full Design by Contract coverage
 
 ## The Problem
 
@@ -204,6 +212,9 @@ MIT License - See [LICENSE](LICENSE) file.
 
 ## Resources
 
-- [Simple Eiffel Organization](https://github.com/simple-eiffel)
 - [General Decimal Arithmetic](http://speleotrove.com/decimal/)
 - [IEEE 754-2008 Standard](https://en.wikipedia.org/wiki/IEEE_754)
+
+---
+
+Part of the [Simple Eiffel](https://github.com/simple-eiffel) ecosystem.
